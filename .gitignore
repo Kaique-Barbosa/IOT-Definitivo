@@ -13,7 +13,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-
 # Documentacao e Regras internas (nao enviar ao GitHub)
-documentacao/
+documentacao/*
+!documentacao/DIARIO_DO_PROJETO.md
 agentes/
+
