@@ -1,0 +1,19 @@
+# Credenciais e Dados Sensiveis
+secrets.py
+config_wifi.py
+credentials.json
+.env
+
+# Python / MicroPython
+__pycache__/
+*.pyc
+*.mpy
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db
+
+
+# Documentacao e Regras internas (nao enviar ao GitHub)
+documentacao/
+agentes/
