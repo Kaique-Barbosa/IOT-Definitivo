@@ -18,3 +18,7 @@ Thumbs.db
 documentacao/
 agentes/
 
+
+# Bancos de dados
+*.db
+*.sqlite3

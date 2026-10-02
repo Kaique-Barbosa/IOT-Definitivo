@@ -77,19 +77,21 @@ firmware/
 * Status: Concluída
 
 ### Fase 5/6 — Configuração do Servidor MQTT Externo
-* Status: Não iniciada
+* Status: Concluída (Utilizando broker.hivemq.com)
 
 ### Fase 7 — Integração do Pico W com MQTT (Envio Real)
-* Status: Não iniciada
+* Status: Concluída
 
 ### Fase 8 — Refinamento do mecanismo de armazenamento offline
 * Status: Parcialmente Concluída (Fila na RAM e Matriz visuais prontos)
 
 ### Fase 9 — Recepção e Preparação para Big Data
-* Status: Não iniciada
+* Status: Concluída (Coletor Python local + Banco SQLite + Dashboard Tkinter)
 
 ## Histórico
 
 * **2026-09-30:** Definição da Estrutura do Payload, conclusão da Fase 0, transição para Fase 1. Inicialização Git, criação branches.
 * **2026-09-30:** Conclusão das Fases 1, 2 e 3. Implementação MVC. Testes de sensores (DHT11, BMP280, Chuva) validados. Criação de Cache para o DHT11 e View OLED.
 * **2026-10-02:** Correção de memory leak no MicroPython usando `gc.collect()`. Implementação concluída da Fase 4: `queue_manager.py` (Fila RAM FIFO de 300 posições), `led_matrix.py` (Barra de progresso NeoPixel), e `connectivity.py` (Base MQTT QoS 0 via `umqtt.simple`). O sistema agora armazena os dados offline e exibe progresso na Matriz de LEDs. Instalação manual da lib `umqtt` no firmware.
+
+* **2026-10-02:** Conclus�o das Fases 5, 6, 7 e 9. Pico W enviando dados via MQTT para o broker p�blico HiveMQ. Cria��o de um script Python local atuando como Subscriber para persistir os dados em banco de dados SQLite (Prepara��o para Big Data), com visualiza��o em tempo real via Dashboard em Tkinter.
