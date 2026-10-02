@@ -6,6 +6,18 @@
     },
     "python.terminal.activateEnvironment": false,
     "micropico.openOnStart": true,
+    "micropico.syncFolder": "firmware",
+    "micropico.syncIgnore": [
+        "documentacao",
+        "agentes",
+        ".git",
+        ".gitignore",
+        ".vscode",
+        ".micropico",
+        "README.md",
+        "*.md",
+        "*.txt"
+    ],
     "python.analysis.typeshedPaths": [
         "~/.micropico-stubs/included"
     ],

@@ -1,0 +1,9 @@
+# Ignorar tudo que não é firmware
+documentacao/
+agentes/
+.git/
+.vscode/
+.gitignore
+.micropico
+*.md
+

@@ -1,9 +1,49 @@
-# view para controlar o Display OLED via I2C
+import machine
+import ssd1306
 
-def init_display():
-    print("Display OLED inicializado (Fake)")
-    pass
+oled = None
 
-def mostrar_dados(dados):
-    pass
+def init():
+    global oled
+    print("Configurando Display OLED...")
+    try:
+        i2c = machine.I2C(1, sda=machine.Pin(14), scl=machine.Pin(15), freq=400000)
+        oled = ssd1306.SSD1306_I2C(128, 64, i2c)
+        
+        oled.fill(0)
+        oled.text("Iniciando...", 0, 0)
+        oled.text("Estacao IoT", 0, 15)
+        oled.show()
+    except Exception as e:
+        print("Falha ao inicializar o Display OLED:", e)
+
+def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0):
+    if oled is None:
+        return
+
+    oled.fill(0)
+    
+    wifi_txt = "OK" if wifi_ok else "--"
+    mqtt_txt = "OK" if mqtt_ok else "--"
+    oled.text(f"W:{wifi_txt} M:{mqtt_txt} F:{fila_tam}", 0, 0)
+    
+    oled.text("-" * 16, 0, 10)
+    
+    temp = dados.get('temperatura', '--')
+    umid = dados.get('dht_umidade', '--')
+    bmp_p = dados.get('bmp_pressao', '--')
+    chuva = dados.get('chuva_bruta', '--')
+    
+    oled.text(f"Temp: {temp} C", 0, 20)
+    oled.text(f"Umid: {umid} %", 0, 30)
+    
+    if bmp_p != '--':
+        pressao_hpa = round(bmp_p / 100, 1)
+        oled.text(f"Pres: {pressao_hpa} hPa", 0, 40)
+    else:
+        oled.text("Pres: -- hPa", 0, 40)
+    
+    oled.text(f"Chuva: {chuva}", 0, 50)
+    
+    oled.show()
 

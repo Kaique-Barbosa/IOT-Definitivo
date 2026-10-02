@@ -1,0 +1,8 @@
+documentacao/
+agentes/
+.git/
+.vscode/
+.gitignore
+README.md
+*.md
+

@@ -2,10 +2,10 @@
 
 ## Estado atual
 
-* **Fase atual:** Fase 1 — Preparação do ambiente
+* **Fase atual:** Fase 5 — Fundamentos do MQTT (Preparação para Servidor)
 * **Status:** Em andamento
-* **Última atualização:** 2026-09-30
-* **Último commit:** chore: commit inicial com estrutura completa MVC do firmware
+* **Última atualização:** 2026-10-02
+* **Último commit:** feat: implementa Fase 4 com fila na RAM, Matriz de LEDs e base MQTT
 * **Branch atual:** development
 
 ## Objetivo do projeto
@@ -27,14 +27,20 @@ Arquitetura MVC (Model / View / Controller).
 Estrutura atual:
 ```text
 firmware/
+├── config.py
 ├── main.py
+├── lib/
+│   ├── bmp280.py
+│   ├── ssd1306.py
+│   └── umqtt/
 ├── models/
-│   └── sensors.py
+│   ├── sensors.py
+│   └── queue_manager.py
 ├── views/
 │   ├── display.py
 │   └── led_matrix.py
 └── controllers/
-    └── .gitkeep
+    └── connectivity.py
 ```
 
 ## GPIOs e conexões
@@ -43,7 +49,9 @@ firmware/
 | --------------- | --------- | ----------- | --------------------- |
 | BMP280          | I2C0      | GP16 / GP17 | Confirmado            |
 | DHT11           | Digital   | GP18        | Confirmado            |
-| Sensor de chuva | ADC2      | GP28        | Confirmado (Jumper JP1 em ANA-IN) |
+| Sensor de chuva | ADC2      | GP28        | Confirmado            |
+| OLED SSD1306    | I2C1      | GP14 / GP15 | Confirmado            |
+| Matriz WS2812B  | NeoPixel  | GP7         | Confirmado            |
 
 ## Documentação utilizada
 
@@ -57,65 +65,31 @@ firmware/
 * Status: Concluída
 
 ### Fase 1 — Preparação do ambiente
-* Status: Em andamento
+* Status: Concluída
 
 ### Fase 2 — Testes individuais dos sensores
+* Status: Concluída
+
+### Fase 3 — Integração dos sensores e OLED
+* Status: Concluída
+
+### Fase 4 — Gerenciamento da memória RAM, Matriz de LEDs e base MQTT
+* Status: Concluída
+
+### Fase 5/6 — Configuração do Servidor MQTT Externo
 * Status: Não iniciada
 
-### Fase 3 — Integração dos sensores
+### Fase 7 — Integração do Pico W com MQTT (Envio Real)
 * Status: Não iniciada
 
-### Fase 4 — Gerenciamento da memória RAM
-* Status: Não iniciada (Adiada para versão futura focada em resiliência offline)
-
-### Fase 5 — Fundamentos do MQTT
-* Status: Não iniciada
-
-### Fase 6 — Primeiro teste MQTT
-* Status: Não iniciada
-
-### Fase 7 — Integração do Pico W com MQTT
-* Status: Não iniciada
-
-### Fase 8 — Mecanismo de armazenamento durante desconexão
-* Status: Não iniciada
+### Fase 8 — Refinamento do mecanismo de armazenamento offline
+* Status: Parcialmente Concluída (Fila na RAM e Matriz visuais prontos)
 
 ### Fase 9 — Recepção e Preparação para Big Data
 * Status: Não iniciada
 
-## Decisões técnicas
-
-### DECISÃO — Adoção do Git e Github
-* **Data:** 2026-09-30
-* **Decisão:** Implementar controle de versionamento Git e sincronizar com repositório remoto.
-* **Motivo:** Preservar a história técnica do código e ter fluxo seguro de branches (main e development).
-
-### DECISÃO — Payload, Taxa de Atualização e MQTT
-* **Data:** 2026-09-30
-* **Decisão:** 
-  - Frequência de leitura em 1Hz (1 segundo) para respeitar o limite físico do sensor DHT11.
-  - Fusão de Sensores: Será calculada a média térmica entre as leituras do DHT11 e do BMP280.
-  - Payload legível: As chaves do JSON utilizarão palavras claras (`temperatura`, `umidade`, etc) em vez de letras isoladas, priorizando a legibilidade para a análise em Big Data.
-  - Fluxo inicial: Envio imediato via protocolo MQTT (com QoS 0 - mais leve) para simplificar a versão 1.0.
-* **Formato do Payload Definido:**
-  ```json
-  {
-    "temperatura": 28.4,
-    "umidade": 60.2,
-    "pressao": 1012.5,
-    "chuva": 45000
-  }
-  ```
-
-## Testes realizados
-
-Nenhum teste foi realizado até o momento.
-
-## Pendências
-
-* **[PENDENTE] - Validação do Ambiente:** Realizar teste mínimo de execução (Hello World/Blink) na placa para iniciar a Fase 1.
-
 ## Histórico
 
-* **2026-09-30:** Definição da Estrutura do Payload, Taxa de 1Hz, conclusão da Fase 0 e transição para Fase 1.
-* **2026-09-30:** Criação do DIÁRIO_DO_PROJETO, inicialização Git, criação branches main e development.
+* **2026-09-30:** Definição da Estrutura do Payload, conclusão da Fase 0, transição para Fase 1. Inicialização Git, criação branches.
+* **2026-09-30:** Conclusão das Fases 1, 2 e 3. Implementação MVC. Testes de sensores (DHT11, BMP280, Chuva) validados. Criação de Cache para o DHT11 e View OLED.
+* **2026-10-02:** Correção de memory leak no MicroPython usando `gc.collect()`. Implementação concluída da Fase 4: `queue_manager.py` (Fila RAM FIFO de 300 posições), `led_matrix.py` (Barra de progresso NeoPixel), e `connectivity.py` (Base MQTT QoS 0 via `umqtt.simple`). O sistema agora armazena os dados offline e exibe progresso na Matriz de LEDs. Instalação manual da lib `umqtt` no firmware.
