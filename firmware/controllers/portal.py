@@ -112,9 +112,9 @@ def ativar_ap():
     ap.active(True)
     time.sleep(0.5)
 
-    # Define nome, senha e tipo de segurança (security=4 = WPA2-PSK)
-    # Sem o parâmetro security, o chip entra em modo indefinido e rejeita a senha
-    ap.config(essid=AP_SSID, password=AP_PASS, security=4)
+    # security=7 = WPA2-AES-CCMP, o modo correto do chip CYW43439 para aceitar senhas WPA2
+    # Valores antigos (4, 3) faziam o chip cair em WEP silenciosamente
+    ap.config(essid=AP_SSID, password=AP_PASS, security=7)
 
     # Aguarda o AP ficar completamente ativo
     timeout = 10
