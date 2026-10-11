@@ -4,7 +4,7 @@ import time
 
 # ===== CONFIGURAÇÃO DO ACCESS POINT =====
 AP_SSID = "EstacaoIoT-Config"
-AP_PASS = None  # Rede aberta, sem senha
+AP_PASS = "12345678"
 
 ap = None
 
@@ -112,8 +112,8 @@ def ativar_ap():
     ap.active(True)
     time.sleep(0.5)
 
-    # Apenas o nome da rede — sem parâmetro de segurança = rede aberta
-    ap.config(essid=AP_SSID)
+    # Define o nome e a senha da rede do portal
+    ap.config(essid=AP_SSID, password=AP_PASS)
 
     # Aguarda o AP ficar completamente ativo
     timeout = 10
