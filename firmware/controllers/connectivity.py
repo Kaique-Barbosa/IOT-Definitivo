@@ -43,11 +43,22 @@ def salvar_credenciais(ssid, senha):
         print("Erro ao salvar credenciais:", e)
         return False
 
+def apagar_credenciais():
+    """Remove o arquivo credenciais.json do flash caso esteja corrompido ou invalido."""
+    try:
+        import os
+        os.remove(CREDENCIAIS_FILE)
+        print("Arquivo de credenciais removido do flash.")
+    except:
+        pass
+
 # ===== WI-FI =====
 
-def conectar_wifi(tentativas_max=10):
+def conectar_wifi(tentativas_max=10, ssid_custom=None, senha_custom=None):
     """
-    Tenta conectar ao Wi-Fi usando as credenciais do flash (ou config.py como fallback).
+    Tenta conectar ao Wi-Fi.
+    Se ssid_custom for fornecido, usa essas credenciais (validação temporária).
+    Caso contrário, busca no flash (credenciais.json) ou em config.py.
     Retorna True se conectou, False se falhou.
     """
     global wlan
@@ -57,7 +68,10 @@ def conectar_wifi(tentativas_max=10):
     if wlan.isconnected():
         return True
 
-    ssid, senha = ler_credenciais()
+    if ssid_custom is not None:
+        ssid, senha = ssid_custom, senha_custom
+    else:
+        ssid, senha = ler_credenciais()
 
     if not ssid or ssid in ("SEU_SSID_AQUI", "NOME_DA_SUA_REDE_AQUI"):
         print("Wi-Fi: SSID não configurado.")

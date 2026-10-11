@@ -62,3 +62,14 @@ def mostrar_modo_portal(ip="192.168.4.1"):
     oled.text("Acesse:", 0, 44)
     oled.text(ip, 0, 54)
     oled.show()
+
+def mostrar_aviso(titulo, subtitulo=""):
+    """Exibe uma mensagem rápida centralizada de aviso/status no OLED."""
+    if oled is None:
+        return
+    oled.fill(0)
+    oled.text("=== AVISO ===", 10, 5)
+    oled.text(titulo[:16], 0, 25)
+    if subtitulo:
+        oled.text(subtitulo[:16], 0, 42)
+    oled.show()

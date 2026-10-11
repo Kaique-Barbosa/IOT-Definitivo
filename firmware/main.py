@@ -24,32 +24,45 @@ def inicializar_hardware():
 def inicializar_rede():
     """
     Tenta conectar ao Wi-Fi salvo.
-    Se falhar, ativa o Captive Portal para o usuário configurar uma nova rede.
-    Retorna True se Wi-Fi conectado ao final, False se algo crítico falhou.
+    Se falhar, ativa o Captive Portal em loop contínuo até que uma credencial
+    válida seja inserida pelo usuário, sem reiniciar a placa por hardware.
     """
     wifi_ok = connectivity.conectar_wifi()
 
     if not wifi_ok:
-        print("Wi-Fi falhou. Ativando Captive Portal...")
         from controllers import portal
 
-        ip = portal.ativar_ap()
-        display.mostrar_modo_portal(ip)
+        while not wifi_ok:
+            print("\n[Portal] Ativando Captive Portal...")
+            ip = portal.ativar_ap()
+            display.mostrar_modo_portal(ip)
 
-        # Bloqueia aqui até o usuário enviar as credenciais pelo celular
-        novas_creds = portal.aguardar_configuracao()
-        portal.desativar_ap()
+            # Bloqueia aqui até o usuário enviar as credenciais pelo celular
+            novas_creds = portal.aguardar_configuracao()
+            portal.desativar_ap()
 
-        connectivity.salvar_credenciais(novas_creds["ssid"], novas_creds["senha"])
+            ssid_digitado = novas_creds.get("ssid", "").strip()
+            senha_digitada = novas_creds.get("senha", "").strip()
 
-        # Tenta conectar com as novas credenciais
-        wifi_ok = connectivity.conectar_wifi()
+            print(f"[Portal] Validando conexão com '{ssid_digitado}'...")
+            display.mostrar_aviso("Testando...", ssid_digitado)
 
-        if not wifi_ok:
-            # Senha ou rede inválida: reinicia a placa para voltar ao portal
-            print("Credenciais inválidas. Reiniciando para voltar ao portal...")
-            time.sleep(2)
-            machine.reset()
+            # Testa a conexão em RAM (sem salvar no flash antes de saber se funciona)
+            wifi_ok = connectivity.conectar_wifi(
+                tentativas_max=10,
+                ssid_custom=ssid_digitado,
+                senha_custom=senha_digitada
+            )
+
+            if wifi_ok:
+                print(f"[Portal] Sucesso! Conectado a '{ssid_digitado}'. Salvando no flash...")
+                display.mostrar_aviso("Wi-Fi Conectado!", "Salvando...")
+                connectivity.salvar_credenciais(ssid_digitado, senha_digitada)
+                time.sleep(1)
+            else:
+                print(f"[Portal] Falha ao conectar em '{ssid_digitado}'. Reabrindo portal...")
+                display.mostrar_aviso("Falha na senha!", "Reabrindo Portal")
+                time.sleep(2)
 
     return wifi_ok
 
