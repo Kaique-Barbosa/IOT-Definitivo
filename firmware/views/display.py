@@ -47,3 +47,18 @@ def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0):
     
     oled.show()
 
+def mostrar_modo_portal(ip="192.168.4.1"):
+    """
+    Exibe a tela do Captive Portal no OLED.
+    Mostra o nome da rede criada pelo Pico W e o IP de acesso para configuração.
+    """
+    if oled is None:
+        return
+    oled.fill(0)
+    oled.text("Modo Portal WiFi", 0, 0)
+    oled.text("================", 0, 10)
+    oled.text("Rede:", 0, 22)
+    oled.text("EstacaoIoT-Cfg", 0, 32)
+    oled.text("Acesse:", 0, 44)
+    oled.text(ip, 0, 54)
+    oled.show()

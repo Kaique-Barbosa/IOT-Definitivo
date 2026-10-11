@@ -2,6 +2,7 @@
 secrets.py
 config_wifi.py
 credentials.json
+credenciais.json
 .env
 
 # Python / MicroPython
