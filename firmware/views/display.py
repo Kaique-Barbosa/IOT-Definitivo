@@ -25,7 +25,7 @@ def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0):
     
     wifi_txt = "OK" if wifi_ok else "--"
     mqtt_txt = "OK" if mqtt_ok else "--"
-    oled.text(f"W:{wifi_txt} M:{mqtt_txt} F:{fila_tam}", 0, 0)
+    oled.text(f"W:{wifi_txt} S:{mqtt_txt} F:{fila_tam}", 0, 0)
     
     oled.text("-" * 16, 0, 10)
     
