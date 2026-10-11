@@ -14,11 +14,8 @@ print("Fase 4+: Sensores + OLED + Matriz LEDs + MQTT + Fila RAM + Captive Portal
 
 def inicializar_hardware():
     """Inicializa todos os periféricos físicos."""
-    print("Configurando hardwares de sensoriamento...")
     sensors.init()
-    print("Configurando Display OLED...")
     display.init()
-    print("Configurando Matriz de LEDs (NeoPixel 5x5)...")
     led_matrix.init()
 
 def inicializar_rede():
