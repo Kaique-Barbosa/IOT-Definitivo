@@ -99,15 +99,21 @@ def ativar_ap():
     """
     Ativa o modo Access Point no Pico W.
     Retorna o IP do AP (geralmente '192.168.4.1').
+    
+    IMPORTANTE: a config() deve ser feita com authmode=0 (rede aberta)
+    e o AP deve ser desligado antes de reconfigurar para evitar travamento
+    do chip CYW43439.
     """
     global ap
     ap = network.WLAN(network.AP_IF)
+    ap.active(False)   # Garante que estava desligado antes de reconfigurar
+    time.sleep(0.5)
+
+    # Configura ANTES de ativar: authmode=0 é o parâmetro correto para rede aberta no Pico W
+    ap.config(ssid=AP_SSID, authmode=0)
     ap.active(True)
 
-    # Configura o AP: sem senha (authmode=0 = OPEN)
-    ap.config(ssid=AP_SSID, security=0)
-
-    # Aguarda o AP ficar ativo
+    # Aguarda o AP ficar completamente ativo
     timeout = 10
     while not ap.active() and timeout > 0:
         time.sleep(0.5)
