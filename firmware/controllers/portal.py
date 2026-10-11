@@ -108,28 +108,13 @@ def ativar_ap():
     ap.active(False)
     time.sleep(0.5)
 
-    # Ativa o AP antes de configurar (comportamento correto para o CYW43439)
+    # CRÍTICO: configurar ANTES de ativar o AP.
+    # No chip CYW43439, o security só é aplicado corretamente se definido antes de active(True).
+    ap.config(essid=AP_SSID, password=AP_PASS, security=7)
+    print("[Portal] AP configurado com WPA2 (security=7)")
+
     ap.active(True)
     time.sleep(0.5)
-
-    # Tenta configurar WPA2 — com fallback para diagnosticar o erro exato
-    try:
-        ap.config(essid=AP_SSID, password=AP_PASS, security=7)
-        print("[Portal] AP configurado com essid + password + security=7")
-    except Exception as e1:
-        print("[Portal] Falha com security=7:", e1)
-        try:
-            # Alguns firmwares usam 'ssid' e 'key' ao invés de 'essid' e 'password'
-            ap.config(ssid=AP_SSID, key=AP_PASS, security=4)
-            print("[Portal] AP configurado com ssid + key + security=4")
-        except Exception as e2:
-            print("[Portal] Falha com key/ssid:", e2)
-            try:
-                # Última tentativa: só o nome, sem senha
-                ap.config(essid=AP_SSID)
-                print("[Portal] AP configurado SEM senha (fallback)")
-            except Exception as e3:
-                print("[Portal] Falha total no ap.config():", e3)
 
     # Aguarda o AP ficar completamente ativo
     timeout = 10
