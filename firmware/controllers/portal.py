@@ -108,19 +108,16 @@ def ativar_ap():
     ap.active(False)
     time.sleep(0.5)
 
-    # CRÍTICO: configurar ANTES de ativar o AP.
-    # No chip CYW43439, o security só é aplicado corretamente se definido antes de active(True).
-    ap.config(essid=AP_SSID, password=AP_PASS, security=7)
-    print("[Portal] AP configurado com WPA2 (security=7)")
-
     ap.active(True)
-    time.sleep(0.5)
-
-    # Aguarda o AP ficar completamente ativo
+    # Aguarda o AP ficar ativo antes de configurar
     timeout = 10
     while not ap.active() and timeout > 0:
         time.sleep(0.5)
         timeout -= 1
+
+    # Forma mais simples e compatível: apenas essid e password.
+    # O MicroPython seleciona WPA2 automaticamente para senhas de 8+ caracteres.
+    ap.config(essid=AP_SSID, password=AP_PASS)
 
     ip = ap.ifconfig()[0]
     print(f"[Portal] AP '{AP_SSID}' ativo! Acesse: http://{ip}")
