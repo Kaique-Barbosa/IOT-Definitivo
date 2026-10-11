@@ -4,10 +4,63 @@ import json
 from umqtt.simple import MQTTClient
 import config
 
+try:
+    import ntptime
+except ImportError:
+    ntptime = None
+
 wlan = None
 cliente_mqtt = None
 
 CREDENCIAIS_FILE = "credenciais.json"
+
+# Flag que indica se o relógio já foi sincronizado via NTP
+ntp_sincronizado = False
+
+# ===== SINCRONIZAÇÃO DE TEMPO REAL (NTP) =====
+
+def sincronizar_ntp():
+    """
+    Tenta sincronizar o relógio interno do Pico W com servidores NTP.
+    Não trava caso o roteador bloqueie a porta UDP 123 ou o servidor demore.
+    """
+    global ntp_sincronizado
+    if ntptime is None:
+        print("[NTP] Modulo ntptime nao disponivel.")
+        return False
+    try:
+        ntptime.settime()
+        ntp_sincronizado = True
+        print(f"[NTP] Relógio sincronizado com sucesso! Hora UTC-3: {obter_hora_formatada()}")
+        return True
+    except Exception as e:
+        print("[NTP] Aviso: Falha ao sincronizar via NTP:", e)
+        return False
+
+def obter_timestamp_epoch():
+    """Retorna epoch ajustado para o fuso horário de Brasília (UTC-3)."""
+    return time.time() - (3 * 3600)
+
+def obter_hora_formatada():
+    """Retorna string no formato 'HH:MM:SS' em horário de Brasília."""
+    if not ntp_sincronizado:
+        return "--:--:--"
+    t = time.localtime(obter_timestamp_epoch())
+    return f"{t[3]:02d}:{t[4]:02d}:{t[5]:02d}"
+
+def obter_hora_curta():
+    """Retorna string no formato 'HH:MM' para cabeçalhos compactos do OLED."""
+    if not ntp_sincronizado:
+        return "--:--"
+    t = time.localtime(obter_timestamp_epoch())
+    return f"{t[3]:02d}:{t[4]:02d}"
+
+def obter_data_hora_iso():
+    """Retorna data e hora completa formatada 'YYYY-MM-DD HH:MM:SS'."""
+    if not ntp_sincronizado:
+        return None
+    t = time.localtime(obter_timestamp_epoch())
+    return f"{t[0]:04d}-{t[1]:02d}-{t[2]:02d} {t[3]:02d}:{t[4]:02d}:{t[5]:02d}"
 
 # ===== GERENCIAMENTO DE CREDENCIAIS =====
 
@@ -66,6 +119,17 @@ def esta_em_simulacao():
     return simulacao_offline
 
 # ===== WI-FI =====
+
+def obter_ip():
+    """Retorna o IP local atribuído à placa ou vazio se desconectado."""
+    if wlan is not None and wlan.isconnected():
+        return wlan.ifconfig()[0]
+    return "0.0.0.0"
+
+def obter_ssid_ativo():
+    """Retorna o nome do SSID atualmente configurado."""
+    ssid, _ = ler_credenciais()
+    return ssid
 
 def conectar_wifi(tentativas_max=10, ssid_custom=None, senha_custom=None):
     """
