@@ -112,9 +112,24 @@ def ativar_ap():
     ap.active(True)
     time.sleep(0.5)
 
-    # security=7 = WPA2-AES-CCMP, o modo correto do chip CYW43439 para aceitar senhas WPA2
-    # Valores antigos (4, 3) faziam o chip cair em WEP silenciosamente
-    ap.config(essid=AP_SSID, password=AP_PASS, security=7)
+    # Tenta configurar WPA2 — com fallback para diagnosticar o erro exato
+    try:
+        ap.config(essid=AP_SSID, password=AP_PASS, security=7)
+        print("[Portal] AP configurado com essid + password + security=7")
+    except Exception as e1:
+        print("[Portal] Falha com security=7:", e1)
+        try:
+            # Alguns firmwares usam 'ssid' e 'key' ao invés de 'essid' e 'password'
+            ap.config(ssid=AP_SSID, key=AP_PASS, security=4)
+            print("[Portal] AP configurado com ssid + key + security=4")
+        except Exception as e2:
+            print("[Portal] Falha com key/ssid:", e2)
+            try:
+                # Última tentativa: só o nome, sem senha
+                ap.config(essid=AP_SSID)
+                print("[Portal] AP configurado SEM senha (fallback)")
+            except Exception as e3:
+                print("[Portal] Falha total no ap.config():", e3)
 
     # Aguarda o AP ficar completamente ativo
     timeout = 10
