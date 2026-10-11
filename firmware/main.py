@@ -63,6 +63,39 @@ def inicializar_rede():
 
     return wifi_ok
 
+# ===== BOTÃO A (SIMULAÇÃO DE QUEDA DE REDE - GPIO 5) =====
+botao_a = machine.Pin(5, machine.Pin.IN, machine.Pin.PULL_UP)
+ultimo_clique_botao = 0
+
+def verificar_botao_a():
+    """Verifica se o Botão A foi pressionado (LOW) com debounce de 300ms."""
+    global ultimo_clique_botao
+    if botao_a.value() == 0:
+        agora = time.ticks_ms()
+        if time.ticks_diff(agora, ultimo_clique_botao) > 300:
+            ultimo_clique_botao = agora
+            em_queda = connectivity.alternar_simulacao()
+            if em_queda:
+                print("\n" + "="*45)
+                print(">>> [BOTÃO A] SIMULAÇÃO DE QUEDA ATIVADA! <<<")
+                print(">>> Wi-Fi 'desconectado' -> Fila de RAM em ação <<<")
+                print("="*45)
+            else:
+                print("\n" + "="*45)
+                print(">>> [BOTÃO A] SIMULAÇÃO DESATIVADA! <<<")
+                print(">>> Conexão restaurada -> Descarregando fila... <<<")
+                print("="*45)
+
+def aguardar_com_verificacao(segundos):
+    """
+    Substitui o time.sleep tradicional particionando o intervalo em fatias de 50ms,
+    permitindo resposta imediata ao clique do Botão A sem atrasos perceptíveis.
+    """
+    fatias = int(segundos / 0.05)
+    for _ in range(fatias):
+        verificar_botao_a()
+        time.sleep(0.05)
+
 def loop():
     """Loop principal da estação — roda após conexão bem-sucedida."""
     inicializar_hardware()
@@ -74,6 +107,7 @@ def loop():
 
     while True:
         try:
+            verificar_botao_a()
             dados = sensors.ler_todos()
             wifi_ok = connectivity.wifi_conectado()
 
@@ -100,15 +134,16 @@ def loop():
                     queue_manager.adicionar(dados)
             else:
                 queue_manager.adicionar(dados)
-                if not wifi_ok:
+                if not wifi_ok and not connectivity.esta_em_simulacao():
                     wifi_ok = connectivity.conectar_wifi(tentativas_max=3)
 
             fila_tam = queue_manager.tamanho()
             display.mostrar_dados(dados, wifi_ok, mqtt_ok, fila_tam)
             led_matrix.atualizar_barra(queue_manager.percentual())
 
+            status_wifi = "SIM_OFF" if connectivity.esta_em_simulacao() else ("OK" if wifi_ok else "OFF")
             print(f"\nRegistro: {dados}")
-            print(f"Fila: {fila_tam}/{config.FILA_LIMITE} | WiFi: {'OK' if wifi_ok else 'OFF'} | MQTT: {'OK' if mqtt_ok else 'OFF'}")
+            print(f"Fila: {fila_tam}/{config.FILA_LIMITE} | WiFi: {status_wifi} | MQTT: {'OK' if mqtt_ok else 'OFF'}")
 
             gc.collect()
             ram_livre = gc.mem_free()
@@ -118,7 +153,7 @@ def loop():
         except Exception as e:
             print("Erro no loop:", e)
 
-        time.sleep(config.INTERVALO_LEITURA)
+        aguardar_com_verificacao(config.INTERVALO_LEITURA)
 
 if __name__ == "__main__":
     loop()

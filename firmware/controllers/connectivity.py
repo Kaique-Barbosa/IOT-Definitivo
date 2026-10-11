@@ -52,16 +52,33 @@ def apagar_credenciais():
     except:
         pass
 
+# ===== CONTROLE DE SIMULAÇÃO (BOTÃO A) =====
+simulacao_offline = False
+
+def alternar_simulacao():
+    """Alterna o estado de simulação de queda de conexão (True/False)."""
+    global simulacao_offline
+    simulacao_offline = not simulacao_offline
+    return simulacao_offline
+
+def esta_em_simulacao():
+    """Retorna True se estiver simulando queda de rede."""
+    return simulacao_offline
+
 # ===== WI-FI =====
 
 def conectar_wifi(tentativas_max=10, ssid_custom=None, senha_custom=None):
     """
     Tenta conectar ao Wi-Fi.
+    Se estiver em simulação forçada pelo Botão A, não tenta conectar.
     Se ssid_custom for fornecido, usa essas credenciais (validação temporária).
     Caso contrário, busca no flash (credenciais.json) ou em config.py.
     Retorna True se conectou, False se falhou.
     """
     global wlan
+    if simulacao_offline:
+        return False
+
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
 
@@ -93,7 +110,12 @@ def conectar_wifi(tentativas_max=10, ssid_custom=None, senha_custom=None):
         return False
 
 def wifi_conectado():
-    """Verifica se o Wi-Fi ainda está ativo."""
+    """
+    Verifica se o Wi-Fi ainda está ativo.
+    Retorna False imediatamente se estiver sob simulação forçada de queda.
+    """
+    if simulacao_offline:
+        return False
     return wlan is not None and wlan.isconnected()
 
 # ===== MQTT =====
