@@ -192,3 +192,4 @@ def aguardar_configuracao():
 
     servidor.close()
     return credenciais
+
