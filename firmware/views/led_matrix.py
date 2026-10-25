@@ -13,7 +13,7 @@ ORDEM_PREENCHIMENTO = [
     24, 23, 22, 21, 20   # Linha 4 (topo)
 ]
 
-COR_VERDE = (0, 8, 0)
+COR_APAGADO = (0, 0, 0)
 COR_VERMELHO = (8, 0, 0)
 
 def init():
@@ -21,7 +21,7 @@ def init():
     print("Configurando Matriz de LEDs (NeoPixel 5x5)...")
     try:
         np = neopixel.NeoPixel(machine.Pin(7), NUM_LEDS)
-        np.fill(COR_VERDE)
+        np.fill(COR_APAGADO)
         np.write()
     except Exception as e:
         print("Falha ao inicializar Matriz de LEDs:", e)
@@ -42,7 +42,7 @@ def atualizar_barra(percentual):
         if i < leds_vermelhos:
             np[indice_neopixel] = COR_VERMELHO
         else:
-            np[indice_neopixel] = COR_VERDE
+            np[indice_neopixel] = COR_APAGADO
     
     np.write()
 

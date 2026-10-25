@@ -5,7 +5,7 @@ oled = None
 
 # Modos de tela: 0 = Clima / Resumo, 1 = Métricas Técnicas, 2 = Diagnóstico de Rede & Sistema
 modo_tela = 0
-TOTAL_TELAS = 3
+TOTAL_TELAS = 4
 
 def init():
     global oled
@@ -31,9 +31,9 @@ def obter_modo_tela():
     """Retorna o índice da tela atualmente selecionada."""
     return modo_tela
 
-def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0, ip_local="", ssid_atual="", ram_livre=0, hora_str="--:--"):
+def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0, ip_local="", ssid_atual="", ram_livre=0, hora_str="--:--", hora_longa="--:--:--"):
     """
-    Renderiza uma das 3 telas no display OLED de 128x64 pixels com base no valor de modo_tela.
+    Renderiza uma das 4 telas no display OLED de 128x64 pixels com base no valor de modo_tela.
     """
     if oled is None:
         return
@@ -48,8 +48,8 @@ def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0, ip_local="", 
     # TELA 0: VISÃO GERAL DO CLIMA
     # ==========================================
     if modo_tela == 0:
-        # Cabeçalho: W:OK M:OK F:0  14:35
-        oled.text(f"W:{wifi_txt} M:{mqtt_txt} F:{fila_tam}", 0, 0)
+        # Cabeçalho: W:OK B:OK   14:35
+        oled.text(f"W:{wifi_txt} B:{mqtt_txt}", 0, 0)
         oled.text(hora_str, 88, 0)
         oled.text("-" * 16, 0, 10)
 
@@ -74,7 +74,7 @@ def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0, ip_local="", 
 
         if bmp_p != '--':
             pressao_hpa = round(bmp_p / 100, 1)
-            oled.text(f"Pres: {pressao_hpa}hPa", 0, 20)
+            oled.text(f"Pres: {pressao_hpa}hPa", 0, 21)
             # Estimativa de altitude barométrica hipsométrica aproximada: h = 44330 * (1 - (p/1013.25)^(1/5.255))
             try:
                 altitude = round(44330 * (1.0 - (pressao_hpa / 1013.25) ** 0.1903), 0)
@@ -82,16 +82,17 @@ def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0, ip_local="", 
             except:
                 oled.text("Alt: -- m", 0, 32)
         else:
-            oled.text("Pres: -- hPa", 0, 20)
+            oled.text("Pres: -- hPa", 0, 21)
             oled.text("Alt: -- m", 0, 32)
 
-        oled.text(f"BMP:{bmp_t}C DHT:{dht_t}C", 0, 48)
+        oled.text(f"BMP: {bmp_t} C", 0, 43)
+        oled.text(f"DHT: {dht_t} C", 0, 54)
 
     # ==========================================
     # TELA 2: DIAGNÓSTICO DE REDE E SISTEMA
     # ==========================================
     elif modo_tela == 2:
-        oled.text("[DIAGNOSTICO SIST]", 0, 0)
+        oled.text("[SYSTEM INFO]", 0, 0)
         oled.text("-" * 16, 0, 10)
 
         ssid_curto = ssid_atual[:11] if ssid_atual else "--"
@@ -100,6 +101,38 @@ def mostrar_dados(dados, wifi_ok=False, mqtt_ok=False, fila_tam=0, ip_local="", 
 
         ram_kb = round(ram_livre / 1024, 1) if ram_livre else 0
         oled.text(f"Fila:{fila_tam} RAM:{ram_kb}k", 0, 48)
+
+    # ==========================================
+    # TELA 3: SAIDAS - MONITOR DE PAYLOAD MQTT
+    # ==========================================
+    elif modo_tela == 3:
+        # Cabecalho: titulo + hora curta
+        oled.text("[SAIDAS]", 0, 0)
+        oled.text(hora_str, 88, 0)
+        oled.text("-" * 16, 0, 9)
+
+        # Temperatura media (fusao DHT + BMP)
+        temp = dados.get('temperatura', '--')
+        oled.text(f"Tmp: {temp} C", 0, 18)
+
+        # Umidade DHT11
+        umid = dados.get('dht_umidade', '--')
+        oled.text(f"Umd: {umid} %", 0, 27)
+
+        # Pressao BMP280 em hPa
+        bmp_p = dados.get('bmp_pressao', '--')
+        if bmp_p != '--':
+            prs = round(bmp_p / 100, 1)
+            oled.text(f"Prs:{prs}hPa", 0, 36)
+        else:
+            oled.text("Prs: -- hPa", 0, 36)
+
+        # Chuva ADC bruta
+        chuva = dados.get('chuva_bruta', '--')
+        oled.text(f"Chuva:{chuva}", 0, 45)
+
+        # Horario exato do envio (HH:MM:SS)
+        oled.text(hora_longa, 0, 54)
 
     oled.show()
 
@@ -111,7 +144,7 @@ def mostrar_modo_portal(ip="192.168.4.1"):
     if oled is None:
         return
     oled.fill(0)
-    oled.text("Modo Portal WiFi", 0, 0)
+    oled.text("Modo host WiFi", 0, 0)
     oled.text("================", 0, 10)
     oled.text("Rede:", 0, 22)
     oled.text("EstacaoIoT-Cfg", 0, 32)

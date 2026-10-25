@@ -200,7 +200,8 @@ def loop():
                 ip_local=connectivity.obter_ip(),
                 ssid_atual=connectivity.obter_ssid_ativo(),
                 ram_livre=ram_livre,
-                hora_str=connectivity.obter_hora_curta()
+                hora_str=connectivity.obter_hora_curta(),
+                hora_longa=connectivity.obter_hora_formatada()
             )
 
             led_matrix.atualizar_barra(queue_manager.percentual())
