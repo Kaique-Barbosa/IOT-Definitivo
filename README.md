@@ -1,4 +1,4 @@
-# 🌦️ Miniestação Meteorológica IoT — Edge Firmware (Raspberry Pi Pico W)
+# 🌦️ Mini estação Meteorológica  (Raspberry Pi Pico W)
 
 ![MicroPython](https://img.shields.io/badge/MicroPython-RP2040-2B2728?style=for-the-badge&logo=micropython&logoColor=white)
 ![Hardware](https://img.shields.io/badge/Hardware-BitDogLab%20v6.3-0078D4?style=for-the-badge&logo=raspberrypi&logoColor=white)
