@@ -1,161 +1,72 @@
-# 🌦️ Mini estação Meteorológica  (Raspberry Pi Pico W)
+# Mini estação Meteorológica (Raspberry Pi Pico W)
 
-![MicroPython](https://img.shields.io/badge/MicroPython-RP2040-2B2728?style=for-the-badge&logo=micropython&logoColor=white)
-![Hardware](https://img.shields.io/badge/Hardware-BitDogLab%20v6.3-0078D4?style=for-the-badge&logo=raspberrypi&logoColor=white)
-![Protocol](https://img.shields.io/badge/Protocolo-MQTT%20%2F%20Wi--Fi-660066?style=for-the-badge&logo=eclipse-mosquitto&logoColor=white)
-![Architecture](https://img.shields.io/badge/Arquitetura-MVC-2E8B57?style=for-the-badge)
+Bem-vindo ao repositório da **nossa mini estação meteorológica**! 🌦️🚀
 
-Firmware embarcado desenvolvido em **MicroPython** para o **Raspberry Pi Pico W** (placa **BitDogLab v6.3**), atuando como dispositivo de borda (*Edge Device*) de uma miniestação meteorológica IoT.
-
-Este repositório faz parte das disciplinas de **IoT e Big Data** e é o módulo responsável por **alimentar e operar o microcontrolador**: leitura contínua de sensores ambientais, fusão de dados, resiliência offline em RAM, interface física local (OLED, Matriz de LEDs e Buzzer), configuração dinâmica de Wi-Fi via Captive Portal e publicação via MQTT.
+É aqui que mora o código em **MicroPython** que roda direto no **Raspberry Pi Pico W** (na placa **BitDogLab**). O trabalho dele é simples, mas essencial: ler o clima ao redor em tempo real, mostrar tudo na telinha da placa e mandar esses dados pela internet sem deixar nada se perder pelo caminho.
 
 ---
 
-## 🌐 Ecossistema do Projeto
+## 🧩 Como tudo se conecta?
 
-A solução completa é dividida em três camadas desacopladas, cada uma em seu respectivo repositório:
+Nosso projeto de **IoT e Big Data** foi dividido em 3 partes que trabalham juntas:
 
-| Camada | Repositório | Responsabilidade |
-| :--- | :--- | :--- |
-| 📡 **Edge / Firmware (Este repositório)** | `IOT-Definitivo` | Coleta dos sensores no Raspberry Pi Pico W, fila de resiliência offline, interface física local e envio de telemetria via MQTT. |
-| ⚙️ **Backend, Broker & API** | [Kaique-Barbosa/BACK_API_IOT](https://github.com/Kaique-Barbosa/BACK_API_IOT/tree/master) | Servidor backend que também atua como **Broker MQTT**, recebe e gerencia os dados enviados pela estação e disponibiliza a API para consumo. |
-| 📊 **Frontend & Visualização** | [zHacker7z/Projeto_BigData](https://github.com/zHacker7z/Projeto_BigData) | Interface web frontend dedicada à visualização gráfica, acompanhamento em tempo real e amostragem dos dados meteorológicos. |
+1. **📡 A Plaquinha (Você está aqui! — `IOT-Definitivo`)**  
+   É o código que alimenta o Raspberry Pi Pico W. Ele lê os sensores de clima, cuida da telinha OLED, dos LEDs, do som e dispara os dados via Wi-Fi.
+2. **⚙️ O Servidor e Broker ([BACK_API_IOT](https://github.com/Kaique-Barbosa/BACK_API_IOT/tree/master))**  
+   É a ponte entre a placa e a web! Ele recebe todas as mensagens da estação (funcionando como *Broker MQTT*), organiza os dados e responde pela API.
+3. **📊 O Visual Bonitão ([IoT_FRONTEND](https://github.com/zHacker7z/IoT_FRONTEND))**  
+   É o nosso frontend! Pega os dados lá da API e transforma em gráficos e painéis bem mais agradáveis de acompanhar.
 
 ```mermaid
 flowchart LR
-    subgraph Edge ["📡 Edge Device (Este Repositório)"]
-        S["Sensores\nDHT11 · BMP280 · Chuva"] --> FW["Firmware MVC\nRaspberry Pi Pico W"]
-        FW <--> RAM["Fila Circular RAM\n(Resiliência Offline)"]
-        FW --> UI["Saídas Locais\nOLED · Matriz 5x5 · Buzzer"]
-    end
-
-    subgraph Backend ["⚙️ BACK_API_IOT"]
-        Broker["Broker MQTT\n(Tópico: estacao/sensores)"] --> API["Gestão de Dados & API"]
-    end
-
-    subgraph Frontend ["📊 Projeto_BigData"]
-        Dash["Dashboard Web\nVisualização dos Dados"]
-    end
-
-    FW -- "Wi-Fi / MQTT (QoS 0)" --> Broker
-    API -- "HTTP / REST" --> Dash
+    A["📡 Plaquinha (Pico W)\nLê sensores e envia"] -->|Wi-Fi / MQTT| B["⚙️ BACK_API_IOT\nBroker + API de Dados"]
+    B -->|API| C["📊 IoT_FRONTEND\nDashboard Web"]
 ```
 
 ---
 
-## ✨ Principais Funcionalidades
+## ✨ O que essa estação faz na prática?
 
-* **Sensoriamento Multivariável e Fusão de Dados:** Coleta temperatura, umidade relativa, pressão atmosférica e nível de chuva, calculando a temperatura combinada pela média entre **DHT11** e **BMP280** com cache de segurança contra falhas pontuais de leitura.
-* **Resiliência Offline (Fila Circular FIFO em RAM):** Se o Wi-Fi ou o Broker MQTT caírem, as leituras não são perdidas — elas são armazenadas na fila circular em memória RAM (`queue_manager.py`). Ao restabelecer a conexão, o sistema descarrega automaticamente os registros pendentes em rajadas de até **5 mensagens por ciclo**.
-* **Captive Portal Autônomo:** Caso nenhuma rede Wi-Fi salva esteja acessível na inicialização, o Pico W cria automaticamente o Access Point `EstacaoIoT-Config` com servidor HTTP embutido (porta `80`), permitindo configurar SSID e senha pelo celular. As credenciais são validadas em RAM antes de serem gravadas na flash (`credenciais.json`).
-* **Display OLED com 4 Telas Interativas (Botão B):**
-  * **Tela 0 — Visão Geral:** Status de Wi-Fi (`W:`) e Broker (`B:`), relógio `HH:MM`, temperatura média, umidade e leitura ADC de chuva.
-  * **Tela 1 — Dados Técnicos:** Pressão atmosférica em `hPa`, estimativa de altitude barométrica em metros, e leituras individuais do `BMP` e `DHT`.
-  * **Tela 2 — Diagnóstico (`[SYSTEM INFO]`):** SSID conectado, endereço IP local, tamanho atual da fila e memória RAM livre.
-  * **Tela 3 — Monitor de Saídas (`[SAIDAS]`):** Exibe em tempo real os valores exatos do payload enviado ao broker a cada ciclo, com horário completo `HH:MM:SS`.
-* **Feedback Visual e Sonoro Não-Bloqueante:**
-  * **Matriz NeoPixel 5x5 (WS2812B):** Permanece apagada quando a fila está vazia e acende progressivamente em vermelho de baixo para cima conforme registros acumulam offline.
-  * **Buzzer (PWM):** Emite bipes curtos de confirmação ao conectar no Wi-Fi/MQTT e dispara um alarme sonoro pulsante não-bloqueante de até 10 segundos em quedas de rede.
-* **Sincronização NTP (UTC-3):** Ajusta o relógio interno via `ntptime` para carimbar cada registro JSON com data e hora no fuso de Brasília.
-* **Simulação de Queda de Rede (Botão A):** Permite simular perda e retorno de conectividade em campo ou laboratório para validar a fila offline e o descarregamento em lote.
+* **🌡️ Fica de olho no clima:** Mede temperatura (fazendo até uma média entre dois sensores pra ficar mais esperto), umidade do ar, pressão atmosférica e se está chovendo.
+* **🛡️ Não perde dados se o Wi-Fi cair:** Se a internet sumir, a placa guarda as leituras na memória dela mesma e acende os **LEDs vermelhos da matriz 5×5** pra te avisar que tem coisa acumulada. Assim que a rede volta, ela descarrega tudo automático!
+* **📺 Tem 4 telinhas no display OLED (Botão B):**
+  * **Clima:** Resumo rápido com status do Wi-Fi/Broker, hora, temperatura, umidade e chuva.
+  * **Dados Técnicos:** Pressão em hPa, altitude aproximada e temperatura de cada sensor separado.
+  * **Sistema:** Qual Wi-Fi está conectado, IP da placa, fila e memória livre.
+  * **Saídas:** Mostra ao vivo os valores exatos que estão sendo enviados naquele segundo!
+* **🔊 Avisa no som:** Um buzzer dá bipes simpáticos quando conecta tudo certinho e solta um alerta se a conexão cair.
+* **📱 Configura Wi-Fi pelo celular:** Se ela não achar a rede salva, cria na hora o próprio Wi-Fi (`EstacaoIoT-Config`). É só conectar pelo celular, digitar a rede e a senha nova e pronto — sem precisar mexer no código!
+* **🧪 Modo teste (Botão A):** Apertou o botão A, ela finge que caiu a internet pra você testar a fila e os LEDs funcionando ao vivo.
 
 ---
 
-## 🔌 Hardware e Pinagem (BitDogLab v6.3)
+## 🔌 O que vai ligado na placa?
 
-| Componente | Interface | GPIO | Função / Descrição |
-| :--- | :--- | :--- | :--- |
-| **BMP280** | `I2C0` | `GP16` (SDA) / `GP17` (SCL) | Temperatura e Pressão atmosférica |
-| **DHT11** | Digital (`1-Wire`) | `GP18` | Temperatura e Umidade relativa |
-| **Sensor de Chuva** | Analógico (`ADC2`) | `GP28` | Leitura analógica de precipitação (alimentado em **3.3V**) |
-| **Display OLED SSD1306** | `I2C1` | `GP14` (SDA) / `GP15` (SCL) | Display 128×64 com 4 telas de status |
-| **Matriz WS2812B (5×5)** | `NeoPixel` | `GP7` | Barra de preenchimento da fila offline (25 LEDs) |
-| **Buzzer A** | `PWM` | `GP21` | Alertas de queda e confirmação de conexão |
-| **Botão A** | Digital (`Pull-Up`) | `GP5` | Alterna simulação de queda de Wi-Fi |
-| **Botão B** | Digital (`Pull-Up`) | `GP6` | Alterna entre as 4 telas do display OLED |
-
-> [!CAUTION]
-> O microcontrolador **RP2040** opera exclusivamente com lógica de **3.3V** nos pinos GPIO/ADC. Alimente o módulo do sensor de chuva sempre no pino **3V3** (nunca em 5V) para evitar danos permanentes ao pino `GP28`.
+* **BMP280** (`GP16` / `GP17`) — Pressão e temperatura
+* **DHT11** (`GP18`) — Umidade e temperatura
+* **Sensor de Chuva** (`GP28` — ligado no **3.3V**!) — Detecta água/chuva
+* **Display OLED** (`GP14` / `GP15`) — Telinha 128×64
+* **Matriz de LEDs 5×5** (`GP7`) — Medidor visual de fila offline
+* **Buzzer** (`GP21`) — Alertas e confirmações sonoras
+* **Botão A** (`GP5`) e **Botão B** (`GP6`) — Teste de queda de rede e troca de telas
 
 ---
 
-## 📊 Faixa de Métricas dos Sensores
+## 📁 Como o código está organizado
 
-| Sensor | Campo no JSON | Range Operacional | Unidade |
-| :--- | :--- | :--- | :--- |
-| **DHT11** | `dht_umidade` | `20` a `90` (máx. `95`) | `%` |
-| **DHT11** | `dht_temp` | `0` a `50` | `°C` |
-| **BMP280** | `bmp_pressao` | `30000` a `110000` (`300` a `1100 hPa`) | `Pa` |
-| **BMP280** | `bmp_temp` | `-40.0` a `+85.0` | `°C` |
-| **Fusão Térmica** | `temperatura` | `0.0` a `50.0` | `°C` |
-| **Sensor de Chuva** | `chuva_bruta` | `~300` (seco) a `65535` (encharcado) | `ADC 16-bit` |
-
----
-
-## 📁 Estrutura do Repositório
-
-```text
-IOT-Definitivo/
-├── documentacao/
-│   └── DIARIO_DO_PROJETO.md          # Diário técnico e histórico de fases do projeto
-├── firmware/
-│   ├── config.py                     # Parâmetros de Wi-Fi fallback, Broker MQTT, fila e intervalo
-│   ├── main.py                       # Orquestrador principal (loop, botões, fila e publicação)
-│   ├── lib/
-│   │   ├── bmp280.py                 # Driver I2C do sensor BMP280
-│   │   ├── ssd1306.py                # Driver I2C do display OLED SSD1306
-│   │   └── umqtt/                    # Cliente MQTT leve (umqtt.simple)
-│   ├── models/
-│   │   ├── sensors.py                # Leitura dos sensores, cache e fusão térmica
-│   │   └── queue_manager.py          # Fila circular FIFO em RAM
-│   ├── views/
-│   │   ├── display.py                # Renderização das 4 telas do OLED e avisos do portal
-│   │   ├── led_matrix.py             # Controle da matriz NeoPixel 5x5
-│   │   └── buzzer.py                 # Controle sonoro não-bloqueante via PWM
-│   └── controllers/
-│       ├── connectivity.py           # Wi-Fi, NTP, MQTT e persistência de credenciais
-│       └── portal.py                 # Access Point e servidor HTTP do Captive Portal
-└── README.md
-```
+* [`firmware/`](firmware/) — Tudo o que vai para dentro do Raspberry Pi Pico W:
+  * [`main.py`](firmware/main.py) — O coração que coordena o loop principal
+  * [`config.py`](firmware/config.py) — Onde ficam os dados do Broker MQTT e intervalos
+  * [`models/`](firmware/models/) — Leitura dos sensores e controle da fila na memória
+  * [`views/`](firmware/views/) — Telas do OLED, matriz de LEDs e buzzer
+  * [`controllers/`](firmware/controllers/) — Conexão Wi-Fi, relógio (NTP), envio MQTT e portal web de configuração
+* [`documentacao/`](documentacao/) — Nosso [Diário do Projeto](documentacao/DIARIO_DO_PROJETO.md) com o histórico completo de tudo que fomos construindo.
 
 ---
 
-## 📡 Formato do Payload MQTT
+## 🚀 Quer colocar pra rodar?
 
-As mensagens são publicadas no tópico configurado em `config.py` (padrão: `estacao/sensores`) com `QoS 0` no seguinte formato JSON:
-
-```json
-{
-  "temperatura": 26.5,
-  "dht_temp": 27,
-  "dht_umidade": 65,
-  "bmp_temp": 26.0,
-  "bmp_pressao": 96520.5,
-  "chuva_bruta": 312,
-  "horario": "2026-10-25 16:06:01"
-}
-```
-
----
-
-## 🚀 Como Executar no Raspberry Pi Pico W
-
-1. **Pré-requisitos:**
-   * Raspberry Pi Pico W com firmware **MicroPython** instalado (placa BitDogLab v6.3 ou montagem equivalente).
-   * IDE **VS Code** com a extensão **MicroPico** (ou **Thonny**).
-2. **Configuração:**
-   * Ajuste os parâmetros de rede e do broker em [`firmware/config.py`](firmware/config.py):
-     * `MQTT_SERVER`, `MQTT_PORT`, `MQTT_CLIENT_ID` e `MQTT_TOPIC` apontando para o servidor do [BACK_API_IOT](https://github.com/Kaique-Barbosa/BACK_API_IOT/tree/master).
-     * `FILA_LIMITE` e `INTERVALO_LEITURA` conforme a necessidade de amostragem.
-3. **Upload para a placa:**
-   * Envie todo o conteúdo da pasta `firmware/` para a memória flash do Raspberry Pi Pico W.
-   * Execute ou reinicie a placa para iniciar o `main.py`.
-4. **Configuração Wi-Fi pelo Captive Portal (opcional):**
-   * Se a rede padrão configurada não estiver disponível, conecte-se pelo celular ou PC à rede Wi-Fi **`EstacaoIoT-Config`** (senha padrão: `12345678`).
-   * Acesse o IP exibido no display OLED (ex.: `192.168.4.1`) e informe o SSID e a senha da rede desejada.
-
----
-
-## 📝 Documentação Complementar
-
-Para acompanhar a evolução técnica, decisões de arquitetura e histórico de marcos do firmware, consulte o [Diário do Projeto](documentacao/DIARIO_DO_PROJETO.md).
+1. Confira no [`firmware/config.py`](firmware/config.py) se o endereço do Broker MQTT (`MQTT_SERVER`) está apontando certinho pro servidor do [BACK_API_IOT](https://github.com/Kaique-Barbosa/BACK_API_IOT/tree/master).
+2. Suba o conteúdo da pasta `firmware/` para o seu **Raspberry Pi Pico W** (usando VS Code com MicroPico ou Thonny).
+3. Ligue a placa! Se ela não encontrar seu Wi-Fi, conecte na rede **`EstacaoIoT-Config`** (senha `12345678`) e configure pelo navegador.
+4. Depois é só acompanhar tudo pela telinha OLED ou direto lá no dashboard do [IoT_FRONTEND](https://github.com/zHacker7z/IoT_FRONTEND)!
