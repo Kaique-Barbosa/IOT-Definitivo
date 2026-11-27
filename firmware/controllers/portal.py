@@ -4,7 +4,7 @@ import time
 
 # ===== CONFIGURAÇÃO DO ACCESS POINT =====
 AP_SSID = "EstacaoIoT-Config"
-AP_PASS = None  # Rede aberta, sem senha
+AP_PASS = "12345678"
 
 ap = None
 
@@ -100,24 +100,24 @@ def ativar_ap():
     Ativa o modo Access Point no Pico W.
     Retorna o IP do AP (geralmente '192.168.4.1').
     
-    IMPORTANTE: a config() deve ser feita com authmode=0 (rede aberta)
-    e o AP deve ser desligado antes de reconfigurar para evitar travamento
-    do chip CYW43439.
+    Nota: o AP deve ser ativado (active=True) antes de configurar o essid.
+    Não especificamos parâmetro de segurança — o padrão é rede aberta.
     """
     global ap
     ap = network.WLAN(network.AP_IF)
-    ap.active(False)   # Garante que estava desligado antes de reconfigurar
+    ap.active(False)
     time.sleep(0.5)
 
-    # Configura ANTES de ativar: authmode=0 é o parâmetro correto para rede aberta no Pico W
-    ap.config(ssid=AP_SSID, authmode=0)
     ap.active(True)
-
-    # Aguarda o AP ficar completamente ativo
+    # Aguarda o AP ficar ativo antes de configurar
     timeout = 10
     while not ap.active() and timeout > 0:
         time.sleep(0.5)
         timeout -= 1
+
+    # Forma mais simples e compatível: apenas essid e password.
+    # O MicroPython seleciona WPA2 automaticamente para senhas de 8+ caracteres.
+    ap.config(essid=AP_SSID, password=AP_PASS)
 
     ip = ap.ifconfig()[0]
     print(f"[Portal] AP '{AP_SSID}' ativo! Acesse: http://{ip}")
